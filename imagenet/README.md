@@ -1,11 +1,9 @@
-A small demonstration of using WebDataset with ImageNet.
+# A small demonstration of using WebDataset with ImageNet.
 
-This is just to illustrate how WebDataset works. The ImageNet dataset
-is small enough that you don't need to use it.
-
-Nevertheless, this code may be useful, for example, if you want
-to store your data on one machine and train from another.
-
+This is a small repo illustrating how to use WebDataset on ImageNet.
+There are environments in which this code is useful and leads
+to speedups, but its primary purpose is just to give an example
+of WebDataset on a familiar problem.
 
 # Python
 
@@ -46,6 +44,12 @@ python3 ./imagenet_train.py
 ```
 
 That's all you need.
+
+```
+
+
+
+```
 
 
 # Other Runtime Environments
