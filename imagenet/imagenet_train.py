@@ -62,7 +62,7 @@ class Net(pl.LightningModule):
 
         # This "if" statement is the only difference between
         # WebDataset and torchvision.datasets.ImageNet
-        if args.imagenet == "":
+        if args.imagenet in [None, ""]:
             dataset = (
                 wds.Dataset(trainurls)
                 .shuffle(5000)

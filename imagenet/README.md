@@ -91,6 +91,35 @@ by using a `pipe:` URL; for example:
 the storage bucket is just implemented by `imagenet_train.py`; it is
 not a part of WebDataset.)
 
+## Optimizing Local Disk Access
+
+If your data is stored on a single rotational drive but you use
+multiple `DataLoader` processes, the reads from the different processes
+will interfere with one another and give you less I/O bandwidth than you
+would otherwise get. Of course, you could reduce `num_workers` (`--num-workers`),
+but in that case, you may not have enough CPU for the data augmentation.
+Generally, if you do nothing, `num_workers=8` will result in about 120 Mbytes/s
+I/O bandwidth on a rotational drive.
+
+`WebDataset` gives you a couple of options for addressing this case:
+
+- You can use the `GOPEN_BUFFER` environment variable to increase the
+  buffer size in the streams opened by `WebDataset`
+
+- You can use an existing buffering program like `mbuffer` to buffer
+  large reads, e.g., `--shards='pipe:mbuffer /my/shards/%s'`
+
+- You can use a custom program that serializes reads, like `fread`
+  included here, and then use `--shards='pipe:./fread /my/shards/%s'`
+
+With one of these, you can usually increase aggregate I/O bandwidth from a
+single rotational drive to about 200 Mbytes/s even using multiple workers trying
+to read simultaneously.
+
+Mechanisms like these can be even more important when your primary storage is a
+RAID system.
+
+
 ## Starting a Web Server and Training
 
 Training against a web server is easy. Let's start by starting up a web server;
@@ -99,6 +128,12 @@ above.
 
 ```Shell
 $ docker run --name nginx-data --rm -v $shards:/usr/share/nginx/html:ro -p 8080:80 nginx
+```
+
+You can also use the built-in web server:
+
+```Shell
+$ python3 -m http.server --dir=$shards 8080
 ```
 
 Now let's train against it:
