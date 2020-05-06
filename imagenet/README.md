@@ -55,6 +55,15 @@ python3 ./imagenet_train.py --imagenet=/root/of/imagenet
 If ImageNet is stored on rotational drives, this is about 30-40% slower
 than WebDataset. On NVMe drives, you shouldn't see much of a difference.
 
+Have a look at what changes you need to make in order to use WebDataset;
+they are minimal.
+
+Note that `imagenet_train.py` uses `ChoppedDataset` to allow the epoch size
+and nominal size to be adjusted. Adjustment of the epoch size is often convenient.
+Adjustment of the nominal size is currently required due to the odd semantics
+of `DataLoader` for `IterableDataset.__len__`; an issue has been opened that
+will hopefully make this unnecessary.
+
 ```
 
 
@@ -63,6 +72,24 @@ than WebDataset. On NVMe drives, you shouldn't see much of a difference.
 
 
 # Other Runtime Environments
+
+This section is not so much about what you need to do in order to use
+WebDataset, but about all the different things it enables.
+
+TL;DR is this: with WebDataset, you can pretty much train from any data source
+by using a `pipe:` URL; for example:
+
+- train over HTTP
+    - `python3 imagenet_train.py --base='pipe:curl -s http://localhost:8080/'`
+- train from Google Cloud Bucket
+    - `python3 imagenet_train.py --base='pipe:gsutil cat gs://bucket/%s'`
+- train from Azure Container
+    - `python3 imagenet_train.py --base='pipe:az storage blob download ... -f /dev/stdout`'
+
+
+(Note that the `%s` convention here for combining the shard spec with
+the storage bucket is just implemented by `imagenet_train.py`; it is
+not a part of WebDataset.)
 
 ## Starting a Web Server and Training
 
