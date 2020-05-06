@@ -1,0 +1,70 @@
+#!/bin/bash
+
+set -e
+
+image=imagenet-example
+imagenet=/imagenet
+shards=/shards
+
+source config.sh
+
+cmd_build() { # build the container
+    docker build -t $image . "$@"
+}
+
+cmd_shell() { # run shell or command in image container locally
+    test -d $shards || {
+        echo "$shards: does not exit" 1>&2
+        exit 2
+    }
+    mkdir -p .cache
+    mkdir -p .config
+    docker run -ti \
+        --rm \
+        --runtime=nvidia \
+        -v "$(pwd)/.cache:/home/tmb/.cache" \
+        -u "$(id -u):$(id -g)" \
+        -v /etc/passwd:/etc/passwd \
+        -v /etc/shadow:/etc/shadow \
+        -v /etc/group:/etc/group \
+        -v /etc/sudoers:/etc/sudoers \
+        -v /tmp/.X11-unix:/tmp/.X11-unix \
+        -v $imagenet:/imagenet \
+        -v $shards:/shards\
+        -v "$HOME:$HOME" \
+        -w "$(pwd)" \
+        --net host \
+        --ipc host \
+        -e DISPLAY="$DISPLAY" \
+        $image \
+        "$@"
+}
+
+cmd_nginx() {
+    docker run --name nginx-data --rm -v $shards:/usr/share/nginx/html:ro -p 8080:80 nginx
+}
+
+cmd_tb() {
+    cmd_shell tensorboard --logdir ./lightning_logs/
+}
+
+case $1 in
+
+*.py)
+    cmd_shell python3 "$@"
+    ;;
+
+help)
+    echo
+    echo available commands:
+    echo
+    grep '^cmd_[_0-9a-z]*() {' "$0" | sed 's/cmd_//;s/\(.*\)() *{* *#* */\1 -- /'
+    ;;
+
+*)
+    cmd=$1
+    shift
+    eval "cmd_$cmd" "$@"
+    ;;
+
+esac

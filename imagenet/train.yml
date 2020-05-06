@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: imagenet-training
+  labels:
+    app: ubuntu-app
+spec:
+  containers:
+  - name: ubuntu-container
+    image: ${image}
+    command:
+      - /bin/bash
+      - -c
+      - |
+        python3 /scripts/imagenet_train.py --shards='pipe:curl -s http://${host}/%s'
+    volumeMounts:
+      - name: shards
+        mountPath: /shards
+    imagePullPolicy: IfNotPresent
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+  volumes:
+    - name: shards
+      hostPath:
+        path: ${shards}
+        type: Directory
+  restartPolicy: Never
