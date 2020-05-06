@@ -45,6 +45,16 @@ python3 ./imagenet_train.py
 
 That's all you need.
 
+You can use the traditional `torchvision.datasets.ImageNet` loader
+using
+
+```Shell
+python3 ./imagenet_train.py --imagenet=/root/of/imagenet
+```
+
+If ImageNet is stored on rotational drives, this is about 30-40% slower
+than WebDataset. On NVMe drives, you shouldn't see much of a difference.
+
 ```
 
 
