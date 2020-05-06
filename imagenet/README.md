@@ -28,9 +28,9 @@ Install the requirements first (you may want to use a virtualenv):
 pip3 install -r requirements.txt
 ```
 
-Next, convert ImageNet to sharded format. The `--imagenet` argument
+Next, convert ImageNet to sharded format. The `--imagenet=` argument
 needs to point to the original ImageNet tree (the same tree that
-`torchvision.datasets.ImageNet` expects). The `--shards` argument
+`torchvision.datasets.ImageNet` expects). The `--shards=` argument
 tells the command where to put the output shards; the default is
 `./data`:
 
