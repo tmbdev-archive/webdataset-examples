@@ -8,6 +8,13 @@ shards=/shards
 
 source config.sh
 
+cmd_venv() {
+    test -d venv || virtualenv venv
+    source venv/bin/activate
+    pip3 install -U -r requirements.txt
+    python3 -m bash_kernel.install
+}
+
 cmd_build() { # build the container
     docker build -t $image . "$@"
 }

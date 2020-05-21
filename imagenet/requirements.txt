@@ -4,4 +4,4 @@ torch
 torchvision
 pytorch-lightning
 tensorboard
-webdataset
+-e git://github.com/tmbdev/webdataset.git#egg=webdataset
