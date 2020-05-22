@@ -89,8 +89,12 @@ class Net(pl.LightningModule):
         inputs, targets = batch
         self.total += len(inputs)
         outputs = self.forward(inputs)
-        loss = self.criterion(outputs, targets)
-        errs = float((outputs.argmax(dim=1) != targets).sum() * 1.0 / len(targets))
+        loss = self.criterion(outputs, targets.to(device=outputs.device))
+        errs = float(
+            (outputs.detach().cpu().argmax(dim=1) != targets.detach().cpu()).sum()
+            * 1.0
+            / len(targets)
+        )
         logs = {"train/loss": loss, "train/err": errs}
         return dict(loss=loss, log=logs)
 
