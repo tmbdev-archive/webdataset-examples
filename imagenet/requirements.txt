@@ -4,4 +4,6 @@ torch
 torchvision
 pytorch-lightning
 tensorboard
+jupyterlab
+bash_kernel
 -e git://github.com/tmbdev/webdataset.git#egg=webdataset
