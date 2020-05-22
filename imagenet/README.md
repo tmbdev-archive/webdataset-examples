@@ -64,8 +64,23 @@ Adjustment of the nominal size is currently required due to the odd semantics
 of `DataLoader` for `IterableDataset.__len__`; an issue has been opened that
 will hopefully make this unnecessary.
 
+# DistributedDataParallel
+
+
+You can run distributed data parallel jobs with something like:
+
+```Shell
+host0$ NODE_RANK=0 MASTER_ADDR=host0 MASTER_PORT=11111 python3 imagenet_train.py --trainer='gpus=1,nb_gpu_nodes=2,distributed_backend="ddp"'
+...
+host1$ NODE_RANK=1 MASTER_ADDR=host0 MASTER_PORT=11111 python3 imagenet_train.py --trainer='gpus=1,nb_gpu_nodes=2,distributed_backend="ddp"'
+...
+
 ```
 
+Note that the `--trainer` arguments are evaluated and interpolated into the `Trainer` arguments.
+Other useful arguments are:
+- `replace_sampler_ddp=False`
+- `auto_lr_find=True`
 
 
 ```
@@ -204,3 +219,5 @@ kubectl apply -f
 ```
 
 There are many possible configurations, storage options, image repos, etc.
+
+

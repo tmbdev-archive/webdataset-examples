@@ -3,6 +3,7 @@
 # A simple example of using WebDataset for ImageNet training.
 # This uses the PyTorch Lightning framework.
 
+import sys
 import argparse
 import logging
 
@@ -53,6 +54,7 @@ class Net(pl.LightningModule):
         pickle.dumps(self.model)
         self.criterion = nn.CrossEntropyLoss()
         self.errs = []
+        self.first_run = True
 
     def train_dataloader(self):
 
@@ -96,6 +98,16 @@ class Net(pl.LightningModule):
             / len(targets)
         )
         logs = {"train/loss": loss, "train/err": errs}
+        if self.first_run:
+            print(
+                "backend:",
+                torch.distributed.get_backend(),
+                "rank/size:",
+                torch.distributed.get_rank(),
+                torch.distributed.get_world_size(),
+                file=sys.stderr,
+            )
+            self.first_run = False
         return dict(loss=loss, log=logs)
 
 
