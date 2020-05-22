@@ -62,9 +62,9 @@ class Net(pl.LightningModule):
         # WebDataset and torchvision.datasets.ImageNet
         if self.imagenet in [None, ""]:
             dataset = (
-                wds.Dataset(self.trainurls)
+                wds.Dataset(self.trainurls, handler=wds.warn_and_continue)
                 .shuffle(5000)
-                .decode("pil")
+                .decode("pil", handler=wds.warn_and_continue)
                 .to_tuple("ppm;jpg;jpeg;png", "cls")
                 .map_tuple(image_transform, identity)
             )
