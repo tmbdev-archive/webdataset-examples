@@ -14,6 +14,8 @@ import torchvision
 import pytorch_lightning as pl
 import webdataset as wds
 
+import pickle
+
 
 image_transform = torchvision.transforms.Compose(
     [
@@ -25,12 +27,30 @@ image_transform = torchvision.transforms.Compose(
 )
 
 
+def identity(x):
+    return x
+
+
 class Net(pl.LightningModule):
-    def __init__(self, hparams):
+    def __init__(
+        self,
+        hparams,
+        imagenet=None,
+        trainurls=None,
+        epoch=1000000,
+        batch_size=64,
+        num_workers=4,
+    ):
         super().__init__()
         self.hparams = hparams
+        self.imagenet = imagenet
+        self.trainurls = trainurls
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.epoch = epoch
         self.total = 0
-        self.model = eval("torchvision.models.%s" % hparams["model"])()
+        self.model = eval("torchvision.models.%s" % self.hparams["model"])()
+        pickle.dumps(self.model)
         self.criterion = nn.CrossEntropyLoss()
         self.errs = []
 
@@ -38,24 +58,24 @@ class Net(pl.LightningModule):
 
         # This "if" statement is the only difference between
         # WebDataset and torchvision.datasets.ImageNet
-        if args.imagenet in [None, ""]:
+        if self.imagenet in [None, ""]:
             dataset = (
-                wds.Dataset(trainurls)
+                wds.Dataset(self.trainurls)
                 .shuffle(5000)
                 .decode("pil")
                 .to_tuple("ppm;jpg;jpeg;png", "cls")
-                .map_tuple(image_transform, lambda x: x)
+                .map_tuple(image_transform, identity)
             )
-            num_batches = (args.epoch + args.batch_size - 1) // args.batch_size
-            dataset = wds.ResizedDataset(dataset, args.epoch, nominal=num_batches)
+            num_batches = (self.epoch + self.batch_size - 1) // self.batch_size
+            dataset = wds.ResizedDataset(dataset, self.epoch, nominal=num_batches)
         else:
             dataset = torchvision.datasets.ImageNet(
-                args.imagenet, split="train", transform=image_transform
+                self.imagenet, split="train", transform=image_transform
             )
-            dataset = wds.ResizedDataset(dataset, args.epoch)
+            dataset = wds.ResizedDataset(dataset, self.epoch)
 
         loader = data.DataLoader(
-            dataset, batch_size=args.batch_size, num_workers=args.num_workers
+            dataset, batch_size=self.batch_size, num_workers=self.num_workers
         )
         return loader
 
@@ -75,15 +95,15 @@ class Net(pl.LightningModule):
         return dict(loss=loss, log=logs)
 
 
-def main(the_args):
+def main(the_args, **kw):
     global args
     args = the_args
     hparams = dict(model=args.model, learning_rate=args.learning_rate)
     print("hparams", hparams)
-    net = Net(hparams)
-    trainer = pl.Trainer(
-        replace_sampler_ddp=False, **eval("dict(" + args.trainer + ")")
-    )
+    net = Net(hparams, **kw)
+    kw = eval("dict(" + args.trainer + ")")
+    print("Trainer config:", kw)
+    trainer = pl.Trainer(**kw)
     logging.getLogger("lightning").setLevel(logging.WARNING)
     trainer.fit(net)
 
@@ -117,4 +137,10 @@ if __name__ == "__main__":
     print("train:", trainurls)
     print("val:", valurls)
 
-    main(args)
+    main(
+        args,
+        trainurls=trainurls,
+        epoch=args.epoch,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+    )
