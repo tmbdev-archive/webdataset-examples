@@ -99,14 +99,17 @@ class Net(pl.LightningModule):
         )
         logs = {"train/loss": loss, "train/err": errs}
         if self.first_run:
-            print(
-                "backend:",
-                torch.distributed.get_backend(),
-                "rank/size:",
-                torch.distributed.get_rank(),
-                torch.distributed.get_world_size(),
-                file=sys.stderr,
-            )
+            try:
+                print(
+                    "backend:",
+                    torch.distributed.get_backend(),
+                    "rank/size:",
+                    torch.distributed.get_rank(),
+                    torch.distributed.get_world_size(),
+                    file=sys.stderr,
+                )
+            except Exception as exn:
+                print(exn, sys.stderr)
             self.first_run = False
         return dict(loss=loss, log=logs)
 
