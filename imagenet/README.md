@@ -1,9 +1,7 @@
-# A small demonstration of using WebDataset with ImageNet.
+# A small demonstration of using WebDataset with ImageNet and PyTorch Lightning
 
 This is a small repo illustrating how to use WebDataset on ImageNet.
-There are environments in which this code is useful and leads
-to speedups, but its primary purpose is just to give an example
-of WebDataset on a familiar problem.
+using the PyTorch Lightning framework.
 
 # Python
 

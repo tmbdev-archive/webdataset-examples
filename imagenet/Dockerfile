@@ -13,7 +13,8 @@ RUN pip3 install pytorch-lightning
 RUN pip3 install tensorboard
 RUN pip3 install numpy scipy
 RUN apt-get install -qqy git
+RUN pip3 install jupyterlab
+RUN pip3 install robustness
+RUN apt-get install -qqy strace
+ADD VERSION /VERSION
 RUN pip3 install git+git://github.com/tmbdev/webdataset
-
-RUN mkdir /scripts
-ADD imagenet_train.py /scripts
