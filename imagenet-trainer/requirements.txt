@@ -1,0 +1,13 @@
+braceexpand
+numpy
+scipy
+torch
+torchvision
+pytorch-lightning
+tensorboard
+matplotlib
+jupyterlab
+funny_words
+bash_kernel
+humanhash3
+-e git://github.com/tmbdev/webdataset.git#egg=webdataset
