@@ -1,0 +1,63 @@
+#!/bin/bash
+
+cmd_clean() {
+    rm -f *-info.txt
+    rm -f *.pth
+    rm -rf [0-9][0-9][0-9][0-9][0-9][0-9][0-9]
+}
+
+cmd_venv() { # set up a virtualenv
+    test -d venv || virtualenv venv
+    source venv/bin/activate
+    pip3 install -U -r requirements.txt > venv.log 2>&1 || exit
+    tail venv.log
+    python3 -m bash_kernel.install
+}
+
+cmd_freshvenv() { # set up a virtualenv
+    rm -rf venv
+    cmd_venv
+}
+
+cmd_testloader() {
+    cmd_venv
+    source venv/bin/activate
+    export MULTIDATASET_VERBOSE=1
+    export OMP_NUM_THREADS=1
+    export WDS_DEBUG=1
+    export GOPEN_VERBOSE=1
+    python3 testloader.py "$@"
+}
+
+cmd_local1() { # run a 1-gpu job in virtualenv
+    cmd_venv
+    source venv/bin/activate
+    python3 ./train.py --upload ./upload.sh "$@"
+}
+
+cmd_lab() {
+    cmd_venv
+    source venv/bin/activate
+    jupyter lab "$@"
+}
+
+cmd=${1:-help}
+shift
+case $cmd in
+help)
+    echo
+    echo available commands:
+    echo
+    grep '^cmd_[_0-9a-z]*() {' "$0" | sed 's/cmd_//;s/\(.*\)() *{* *#* */\1 -- /'
+    echo
+    ;;
+*.py)
+    cmd_venv
+    source venv/bin/activate
+    python3 $cmd "$@"
+    ;;
+*)
+    set -e
+    eval "cmd_$cmd" "$@"
+    ;;
+esac
