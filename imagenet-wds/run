@@ -1,0 +1,60 @@
+#!/bin/bash
+
+
+cmd_clean() { # remove temporary files
+    rm -f *-info.txt
+    rm -f *.pth *.pth.tar
+    rm -f 15*.log
+}
+
+
+cmd_venv() { # set up a virtualenv
+    test -d venv || virtualenv venv
+    source venv/bin/activate
+    pip3 install -U pip
+    pip3 install -U -r requirements.txt
+    python3 -m bash_kernel.install
+    pip3 install -U neovim
+    pip3 install -U jupyterlab
+    pip3 install -U pytest
+}
+
+cmd_lab() { # run jupyter lab in the environment
+    set -e
+    cmd_venv > venv.log
+    source venv/bin/activate
+    export OMP_NUM_THREADS=1
+    jupyter lab "$@"
+}
+
+cmd_bench() { # run the benchmark script with webdataset
+    export OMP_NUM_THREADS=1
+    set -e
+    for i in {1..10}; do
+        for loader in ${*:-wds orig}; do
+            ./run main-wds.py --loader=$loader --augmentation=full --epochs=10
+        done
+    done
+}
+
+cmd=${1:-help}
+shift
+case $cmd in
+help)
+    echo; echo available commands:; echo
+    grep '^cmd_[_0-9a-z]*() {' "$0" | sed 's/cmd_//;s/\(.*\)() *{* *#* */\1 -- /'
+    ;;
+*.py)
+    # cmd_versions
+    set -e
+    # hg status grep -v '^M ' > /dev/null
+    cmd_venv > venv.log
+    source venv/bin/activate
+    export OMP_NUM_THREADS=1
+    python3 "$cmd" "$@"
+    ;;
+*)
+    set -e
+    eval "cmd_$cmd" "$@"
+    ;;
+esac
