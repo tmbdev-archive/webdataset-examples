@@ -5,8 +5,6 @@ import random
 import shutil
 import time
 import warnings
-import subprocess
-from itertools import islice
 
 import torch
 import torch.nn as nn
@@ -34,7 +32,6 @@ parser.add_argument('--shuffle', type=int, default=1000, help='shuffle buffer si
 parser.add_argument('--trainshards', default='./shards/imagenet-train-{000000..001281}.tar', help='path/URL for ImageNet shards',
 )
 parser.add_argument('--trainsize', type=int, default=1281167, help='ImageNet training set size')
-parser.add_argument('--logprefix', default='log')
 parser.add_argument('--augmentation', default='full')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     choices=model_names,

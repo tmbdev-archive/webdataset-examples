@@ -57,3 +57,15 @@ The changes from the original are:
 - for the original data loader, the directory is now an option (rather
   than a positional argument)
 - a few new command line options
+
+You can see the differences by typing:
+
+```Bash
+$ diff main-orig.py main-wds.py
+```
+
+or
+
+```Bash
+$ meld main-orig.py main-wds.py
+```

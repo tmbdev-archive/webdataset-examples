@@ -9,7 +9,7 @@ cmd_clean() { # remove temporary files
 
 
 cmd_venv() { # set up a virtualenv
-    test -d venv || virtualenv venv
+    test -d venv || python3 -m venv venv
     source venv/bin/activate
     pip3 install -U pip
     pip3 install -U -r requirements.txt

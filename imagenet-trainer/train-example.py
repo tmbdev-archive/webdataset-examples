@@ -1,6 +1,4 @@
-import time
 import argparse
-import os
 
 import torchvision
 

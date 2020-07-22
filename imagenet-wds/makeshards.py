@@ -1,3 +1,4 @@
+import sys
 import os
 import os.path
 import random
@@ -8,26 +9,37 @@ from torchvision import datasets
 import webdataset as wds
 
 
-parser = argparse.ArgumentParser("ImageNet training on shards")
-parser.add_argument(
-    "--dir",
-    default="./data/",
-    help="directory containing ImageNet data distribution suitable for torchvision.datasets",
-)
-parser.add_argument(
-    "--shards", default="./shards/imagenet", help="directory where shards are written"
-)
+parser = argparse.ArgumentParser("""Generate sharded dataset from original ImageNet data.""")
 parser.add_argument("--splits", default="train,val", help="which splits to write")
 parser.add_argument(
     "--filekey", action="store_true", help="use file as key (default: index)"
 )
 parser.add_argument("--maxsize", type=float, default=1e9)
 parser.add_argument("--maxcount", type=float, default=1000)
+parser.add_argument(
+    "--shards", default="./shards", help="directory where shards are written"
+)
+parser.add_argument(
+    "--data",
+    default="./data",
+    help="directory containing ImageNet data distribution suitable for torchvision.datasets",
+)
 args = parser.parse_args()
 
 
 assert args.maxsize > 10000000
 assert args.maxcount < 1000000
+
+
+if not os.path.isdir(os.path.join(args.data, "train")):
+    print(f"{args.data}: should be directory containing ImageNet", file=sys.stderr)
+    print(f"suitable as argument for torchvision.datasets.ImageNet(...)", file=sys.stderr)
+    sys.exit(1)
+
+
+if not os.path.isdir(os.path.join(args.shards, ".")):
+    print(f"{args.shards}: should be a writable destination directory for shards", file=sys.stderr)
+    sys.exit(1)
 
 
 splits = args.splits.split(",")
@@ -42,7 +54,7 @@ def readfile(fname):
 all_keys = set()
 
 
-def write_dataset(imagenet, base="./imagenet", split="train"):
+def write_dataset(imagenet, base="./shards", split="train"):
 
     # We're using the torchvision ImageNet dataset
     # to parse the metadata; however, we will read
@@ -50,6 +62,7 @@ def write_dataset(imagenet, base="./imagenet", split="train"):
     # avoid having to reencode them)
     ds = datasets.ImageNet(imagenet, split=split)
     nimages = len(ds.imgs)
+    print("# nimages", nimages)
 
     # We shuffle the indexes to make sure that we
     # don't get any large sequences of a single class
@@ -58,7 +71,7 @@ def write_dataset(imagenet, base="./imagenet", split="train"):
     random.shuffle(indexes)
 
     # This is the output pattern under which we write shards.
-    pattern = base + "-" + split + "-%06d.tar"
+    pattern = os.path.join(base, f"imagenet-{split}-%06d.tar")
 
     with wds.ShardWriter(pattern, maxsize=int(args.maxsize), maxcount=int(args.maxcount)) as sink:
         for i in indexes:
@@ -87,4 +100,5 @@ def write_dataset(imagenet, base="./imagenet", split="train"):
 
 
 for split in splits:
-    write_dataset(args.dir, base=args.shards, split=split)
+    print("# split", split)
+    write_dataset(args.data, base=args.shards, split=split)
