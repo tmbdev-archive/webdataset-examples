@@ -3,6 +3,8 @@
 This is a small repo illustrating how to use WebDataset on ImageNet.
 using the PyTorch Lightning framework.
 
+**NB: This repository is not up to date right now.**
+
 # Python
 
 There are two Python programs:
