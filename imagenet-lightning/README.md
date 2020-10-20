@@ -81,9 +81,6 @@ Other useful arguments are:
 - `auto_lr_find=True`
 
 
-```
-
-
 # Other Runtime Environments
 
 This section is not so much about what you need to do in order to use
