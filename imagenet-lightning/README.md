@@ -1,9 +1,25 @@
+# General Comments
+
+    WebDataset doesn't randomly distribute samples across nodes, but shards. For large training jobs and many nodes, you should split your dataset into a few hundred shards at least.
+    For IterableDatasets, you should do batching inside the Dataset so that whole batches are transferred to the DataLoader; this isn't specific to WebDataset. However, if you want to mix data more, you can unbatch, shuffle, and rebatch in the training job (MultiDataset makes that particularly simple, but you can also do it with DataLoader)
+    Which shards are selected is handled by three hooks in WebDataset:
+        the reseed_hook is called allowing you to reseed the random number generator (default: noop)
+        the node_selection hook is called on a list of shards, returning the node-specific subset (default: noop)
+        the shard_selection hook is called on that list of shards, returning the final subset of shards
+        the shard_shuffle hook is called to shuffle those shards
+
+By default, training jobs on each node will see the entire dataset for training; that's because distributed frameworks have difficulties with different numbers of training batches from different nodes. If you don't want that behavior, you need to update the node_selection hook to select a subset of shards for each node.
+
+This setup attempts to satisfy a number of different existing constraints as well as possible: the expectations of distributed frameworks, the constraint that distributed sequential I/O cannot guarantee exactly equal distribution of samples, and the existing APIs.
+
+(For precise epochs and equal number of batches per worker, you need additional network communications somewhere; Tensorcom with PUBSUB sockets are a cleaner and more efficient solution.)
+
+**NB: this example needs updating and may not work with the latest versions of Lightning and WebDataset**
+
 # A small demonstration of using WebDataset with ImageNet and PyTorch Lightning
 
 This is a small repo illustrating how to use WebDataset on ImageNet.
 using the PyTorch Lightning framework.
-
-**NB: This repository is not up to date right now.**
 
 # Python
 
