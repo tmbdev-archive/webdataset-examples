@@ -1,12 +1,12 @@
 # General Comments
 
-    WebDataset doesn't randomly distribute samples across nodes, but shards. For large training jobs and many nodes, you should split your dataset into a few hundred shards at least.
-    For IterableDatasets, you should do batching inside the Dataset so that whole batches are transferred to the DataLoader; this isn't specific to WebDataset. However, if you want to mix data more, you can unbatch, shuffle, and rebatch in the training job (MultiDataset makes that particularly simple, but you can also do it with DataLoader)
-    Which shards are selected is handled by three hooks in WebDataset:
-        the reseed_hook is called allowing you to reseed the random number generator (default: noop)
-        the node_selection hook is called on a list of shards, returning the node-specific subset (default: noop)
-        the shard_selection hook is called on that list of shards, returning the final subset of shards
-        the shard_shuffle hook is called to shuffle those shards
+WebDataset doesn't randomly distribute samples across nodes, but shards. For large training jobs and many nodes, you should split your dataset into a few hundred shards at least.
+For IterableDatasets, you should do batching inside the Dataset so that whole batches are transferred to the DataLoader; this isn't specific to WebDataset. However, if you want to mix data more, you can unbatch, shuffle, and rebatch in the training job (MultiDataset makes that particularly simple, but you can also do it with DataLoader)
+Which shards are selected is handled by three hooks in WebDataset:
+    the reseed_hook is called allowing you to reseed the random number generator (default: noop)
+    the node_selection hook is called on a list of shards, returning the node-specific subset (default: noop)
+    the shard_selection hook is called on that list of shards, returning the final subset of shards
+    the shard_shuffle hook is called to shuffle those shards
 
 By default, training jobs on each node will see the entire dataset for training; that's because distributed frameworks have difficulties with different numbers of training batches from different nodes. If you don't want that behavior, you need to update the node_selection hook to select a subset of shards for each node.
 
