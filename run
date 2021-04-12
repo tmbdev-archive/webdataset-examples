@@ -1,0 +1,80 @@
+#!/bin/bash
+
+
+cmd_clean() { # remove temporary files
+    rm -f *-info.txt
+    rm -f *.pth *.pth.tar
+    rm -f 15*.log
+}
+
+
+cmd_venv() { # set up a virtualenv
+    test -d venv || python3 -m venv venv
+    source venv/bin/activate
+    pip3 install -U pip
+    pip3 install -U -r requirements.txt
+    python3 -m bash_kernel.install
+    pip3 install -U neovim
+    pip3 install -U jupyterlab
+    pip3 install -U pytest
+}
+
+cmd_lab() { # run jupyter lab in the environment
+    set -e
+    cmd_venv > venv.log
+    source venv/bin/activate
+    export OMP_NUM_THREADS=1
+    jupyter lab "$@"
+}
+
+cmd_bench() { # run the benchmark script with webdataset
+    export OMP_NUM_THREADS=1
+    set -e
+    for i in {1..10}; do
+        for loader in ${*:-wds orig}; do
+            ./run main-wds.py --loader=$loader --augmentation=full --epochs=10
+        done
+    done
+}
+
+
+cmd_multi() {
+    set -x
+    set -e
+    session=distimgnet
+    tmux new-session -s $session 'nvidia-smi dmon' \; detach-client
+    export world=$1
+    export MASTER_ADDR=127.0.0.1
+    export MASTER_PORT=25600
+    for ((rank=0; rank<world; rank++)); do
+        cmd="env MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT"
+        cmd="$cmd python3 distimgnet.py --size $world --rank $rank"
+        cmd="$cmd --neval 10 --device cpu --threads 2 --nworkers 2 --ntest-workers 2"
+        cmd="$cmd; sleep 120"
+        tmux split-window -t $session "$cmd"
+    done
+    tmux select-layout -t $session even-vertical
+    tmux attach -t $session
+}
+
+cmd=${1:-help}
+shift
+case $cmd in
+help)
+    echo; echo available commands:; echo
+    grep '^cmd_[_0-9a-z]*() {' "$0" | sed 's/cmd_//;s/\(.*\)() *{* *#* */\1 -- /'
+    ;;
+*.py)
+    # cmd_versions
+    set -e
+    # hg status grep -v '^M ' > /dev/null
+    cmd_venv > venv.log
+    source venv/bin/activate
+    export OMP_NUM_THREADS=1
+    python3 "$cmd" "$@"
+    ;;
+*)
+    set -e
+    eval "cmd_$cmd" "$@"
+    ;;
+esac

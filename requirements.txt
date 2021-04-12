@@ -1,0 +1,10 @@
+braceexpand
+numpy
+scipy
+tk
+matplotlib
+torch
+torchvision
+jupyterlab
+bash_kernel
+-e git+git://github.com/tmbdev/webdataset#egg=webdataset
