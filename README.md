@@ -12,6 +12,15 @@ The original code is in `main-orig.py` and the WebDataset-based code is in
 `main-wds.py`; the latter lets you switch between WebDataset and file based
 loading using a command line switch.
 
+Also have a look at the `run` script, which shows you how to invoke the various
+programs.
+
+Before you do anything, set up a virtualenv with
+
+```Bash
+$ ./run venv
+```
+
 # Purpose
 
 This code is as close as possible to the original PyTorch example to illustrate
