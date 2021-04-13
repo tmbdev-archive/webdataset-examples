@@ -1,37 +1,19 @@
 # Introduction
 
-This is a derivative of the PyTorch Imagenet training example from the
-[PyTorch examples folder](https://github.com/pytorch/examples/tree/master/imagenet).
+This code is as close as possible to the original PyTorch example to illustrate
+the changes necessary to move from PyTorch indexed datasets to iterable datasets.
+The original example is quite complex because of all the different options.
+This code inherits that complexity.
 
-This is mainly aimed at people familiar with that example; for new code, you may
-want to use the `imagenet-lightning` example in this tree (which uses the
-PyTorch Lightning framework) or the `simple-imagenet` example, which organizes
-training a bit better.
+For new developments, you may want to start with [tmbdev/webdataset-lightning](http://github.com/tmbdev/webdataset-lightning) or other examples.
 
-The original code is in `main-orig.py` and the WebDataset-based code is in
-`main-wds.py`; the latter lets you switch between WebDataset and file based
-loading using a command line switch.
-
-Also have a look at the `run` script, which shows you how to invoke the various
-programs.
+# VirtualEnv
 
 Before you do anything, set up a virtualenv with
 
 ```Bash
 $ ./run venv
 ```
-
-# Purpose
-
-This code is as close as possible to the original PyTorch example to illustrate
-the changes necessary to move from PyTorch indexed datasets to iterable datasets.
-
-This is good code to understand the principles of WebDataset if you are familiar
-with the original example.
-The original example is quite complex because of all the different options.
-This code inherits that complexity.
-Please see the other WebDataset examples for a better starting point to base
-new code on.
 
 # Generating the Shards
 
