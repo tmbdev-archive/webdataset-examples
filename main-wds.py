@@ -29,7 +29,7 @@ parser.add_argument('--data', metavar='DIR', default='./data',
                     help='path to dataset')
 parser.add_argument('--loader', default='wds', help='loader to use: orig, wds')
 parser.add_argument('--shuffle', type=int, default=1000, help='shuffle buffer size for WebDataset')
-parser.add_argument('--trainshards', default='./shards/imagenet-train-{000000..001281}.tar', help='path/URL for ImageNet shards',
+parser.add_argument('--trainshards', default='./shards/imagenet-train-{000000..000490}.tar', help='path/URL for ImageNet shards',
 )
 parser.add_argument('--trainsize', type=int, default=1281167, help='ImageNet training set size')
 parser.add_argument('--augmentation', default='full')
@@ -215,7 +215,7 @@ def main_worker(gpu, ngpus_per_node, args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             sampler = getattr(train_loader, "sampler", None)
-            if sampler is not None:
+            if sampler is not None and hasattr(sampler, "set_epoch"):
                 sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
 
@@ -305,16 +305,34 @@ def make_train_loader_wds(args):
     train_transform = make_train_transform(args)
     num_batches = args.trainsize // args.batch_size
     train_dataset = (
-        wds.Dataset(args.trainshards, length=num_batches, shard_selection=worker_urls)
+        wds.WebDataset(args.trainshards, length=num_batches)
         .shuffle(args.shuffle)
         .decode("pil")
         .to_tuple("jpg;png;jpeg cls")
         .map_tuple(train_transform, identity)
-        .batched(args.batch_size)
     )
-    train_loader = torch.utils.data.DataLoader(
+    if args.distributed:
+        # It's good to avoid partial batches when using DistributedDataParallel.
+        train_dataset = train_dataset.batched(args.batch_size, partial=False)
+    else:
+        train_dataset = train_dataset.batched(args.batch_size)
+    # WebLoader is just the regular DataLoader with the same convenience methods
+    # that WebDataset has.
+    train_loader = wds.WebLoader(
         train_dataset, batch_size=None, shuffle=False, num_workers=args.workers,
     )
+    if args.distributed:
+        # With DDP, we need to make sure that all nodes get the same number of batches;
+        # we do that by reusing a little bit of data.
+        # Note that you only need to do this when retrofitting code that depends on
+        # epoch size. A better way is to iterate through the entire dataset on all nodes.
+        dataset_size = 1281167
+        number_of_batches = dataset_size // (args.batch_size * args.world_size)
+        print("# batches per node = ", number_of_batches)
+        train_loader = train_loader.repeat(2).slice(number_of_batches)
+        # This only sets the value returned by the len() function; nothing else uses it,
+        # but some frameworks care about it.
+        train_loader.length = number_of_batches
     return train_loader
 
 
@@ -326,8 +344,6 @@ def make_val_loader(args):
         val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True
     )
     return val_loader
-
-
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
@@ -482,11 +498,11 @@ def accuracy(output, target, topk=(1,)):
 
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
-        correct = pred.eq(target.view(1, -1).expand_as(pred))
+        correct = pred.eq(target.reshape(1, -1).expand_as(pred))
 
         res = []
         for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 

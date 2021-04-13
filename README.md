@@ -12,6 +12,18 @@ The original code is in `main-orig.py` and the WebDataset-based code is in
 `main-wds.py`; the latter lets you switch between WebDataset and file based
 loading using a command line switch.
 
+# Purpose
+
+This code is as close as possible to the original PyTorch example to illustrate
+the changes necessary to move from PyTorch indexed datasets to iterable datasets.
+
+This is good code to understand the principles of WebDataset if you are familiar
+with the original example.
+The original example is quite complex because of all the different options.
+This code inherits that complexity.
+Please see the other WebDataset examples for a better starting point to base
+new code on.
+
 # Generating the Shards
 
 Before training with WebDataset, you need a sharded dataset. Datasets are becoming
@@ -25,26 +37,41 @@ that data into shards, you can use:
 ```Bash
 $ ln -s /data/imagenet ./data
 $ mkdir ./shards
-$ ./run makeshards.py
+$ ./run makeshards
 ```
 
 The `./run` command is just a helper script that will run Python commands
 for you in a virtual environment.
 
-This should take a few minutes, and eventually, you should end up with 1282
-training shards and 50 validation shards. You can split your dataset into larger
+This should take a few minutes, and eventually, you should end up with 490
+training shards and 23 validation shards. You can split your dataset into larger
 or smaller shards, depending on your needs. These shards happen to contain
-1000 training exaamples each.
+300 Mbytes worth of examples each.
 
 Have a look at `makeshards.py` to see how the shards are written.
 
 # Running Training
 
-You can simply run training using the original and the new data set implementations
-using `./run bench`.
+After generating the shards, you can run training with:
 
-Have a look at `main-wds.py` to see the different options for selecting different
-dataset implementations, different augmentation methods
+```Bash
+    $ ./run single  # DataParallel training
+```
+
+
+```Bash
+    $ ./run multi # DistributedDataParallel training
+```
+
+The `./run multi` command uses functionality in the original example
+that spawns multiple subprocesses on the same machine and illustrates
+the functionality. If you want to run truly distributed processes,
+this should work the same way, but you need to start up the processes
+in whatever way you are used to starting them.
+
+For true distributed training, it is most convenient to put the
+dataset on some web server. In the cloud, you can train from S3 or GCS
+directly.
 
 # Changes From Original
 

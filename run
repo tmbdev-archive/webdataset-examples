@@ -1,6 +1,16 @@
 #!/bin/bash
 
 
+set -e
+set -x
+
+
+die() {
+    echo "ERROR: $*"
+    exit 1
+}
+
+
 cmd_clean() { # remove temporary files
     rm -f *-info.txt
     rm -f *.pth *.pth.tar
@@ -21,7 +31,6 @@ cmd_venv() { # set up a virtualenv
 
 cmd_lab() { # run jupyter lab in the environment
     set -e
-    cmd_venv > venv.log
     source venv/bin/activate
     export OMP_NUM_THREADS=1
     jupyter lab "$@"
@@ -38,7 +47,29 @@ cmd_bench() { # run the benchmark script with webdataset
 }
 
 
+check_shards() {
+    test -d ./data/val || die "no .data/val directory found"
+    numshards=$(ls shards/imagenet-train-??????.tar | wc -l)
+    if [[ $numshards != 490 ]]; then die "wrong # shards in ./shards (got: $numshards, wanted: 490)"; fi
+}
+
+
+cmd_single() { # run webdataset in single process
+    check_shards
+    source venv/bin/activate
+    python3 main-wds.py
+}
+
 cmd_multi() {
+    check_shards
+    source venv/bin/activate
+     GOPEN_VERBOSE=1 python3 main-wds.py --dist-url tcp://127.0.0.1:9153 --dist-backend nccl --multiprocessing-distributed --world-size 1 --rank 0
+}
+
+
+cmd_dist() {
+    check_shards
+    source venv/bin/activate
     set -x
     set -e
     session=distimgnet
@@ -47,14 +78,19 @@ cmd_multi() {
     export MASTER_ADDR=127.0.0.1
     export MASTER_PORT=25600
     for ((rank=0; rank<world; rank++)); do
-        cmd="env MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT"
-        cmd="$cmd python3 distimgnet.py --size $world --rank $rank"
-        cmd="$cmd --neval 10 --device cpu --threads 2 --nworkers 2 --ntest-workers 2"
-        cmd="$cmd; sleep 120"
+        cmd="env MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT python3 main-wds.py --world-size $world --rank $rank; sleep 120"
         tmux split-window -t $session "$cmd"
     done
     tmux select-layout -t $session even-vertical
     tmux attach -t $session
+}
+
+cmd_makeshards() {
+    test -d ./data/train || die "./data/train: does not exist"
+    test -d ./data/val || die "./data/val: does not exist"
+    test -d ./shards || die "./shards: must exist and be directory"
+    source venv/bin/activate
+    python3 makeshards.py "$@"
 }
 
 cmd=${1:-help}
@@ -68,7 +104,6 @@ help)
     # cmd_versions
     set -e
     # hg status grep -v '^M ' > /dev/null
-    cmd_venv > venv.log
     source venv/bin/activate
     export OMP_NUM_THREADS=1
     python3 "$cmd" "$@"
