@@ -1,3 +1,24 @@
+# PyTorch Imagenet Example
+
+This is a minimal modification of the PyTorch Imagenet example; it is not the best example to base your code on because the PyTorch Imagenet example itself is fairly old code.
+
+Please go to 
+
+http://github.com/webdataset
+
+for up-to-date examples of WebDataset usage.
+
+
+```
+
+
+
+
+
+
+```
+
+
 # Introduction
 
 This code is as close as possible to the original PyTorch example to illustrate
